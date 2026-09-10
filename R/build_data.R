@@ -15,6 +15,7 @@
 
 suppressPackageStartupMessages({
   library(dplyr)
+  library(tidyr)
 })
 
 root <- here::here()
@@ -24,15 +25,6 @@ source(file.path(root, "R/utils/write_stable.R"))
 raw_dir <- file.path(root, "data-raw")
 out_dir <- file.path(root, "data")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
-
-todo_reshape <- function(n) {
-  stop(
-    "R/build_data.R: the reshape for figure ", n, " has not been written yet.\n",
-    "Replace the todo_reshape(", n, ") call with the pivot that produces the tidy\n",
-    "long-format data frame for that figure, then remove this helper.",
-    call. = FALSE
-  )
-}
 
 # ---- Indicator constants -----------------------------------------------------
 
@@ -56,17 +48,23 @@ f1_raw  <- read_epa_csv(f1_path)
 # columns into id_cols so the split between keys and series is explicit.
 assert_headers(
   f1_raw,
-  id_cols          = character(),
-  expected_headers = c("Year", "Carbon dioxide", "Methane", "Nitrous oxide", "HFCs, PFCs, and SF6"),
+  id_cols          = c("Year"),
+  expected_headers = c("Carbon dioxide", "Methane", "Nitrous oxide", "HFCs, PFCs, and SF6"),
   what             = "global-ghg-emissions_fig-1.csv"
 )
 
-# TODO reshape: 6 rows, Year + 4 series.
-# Source headers: Year | Carbon dioxide | Methane | Nitrous oxide | HFCs, PFCs, and SF6
-# Units line: million metric tons CO2e
-# Produce a tidy long-format data frame. Keep every value as character: the
-# source carries up to 10 significant digits and must survive byte for byte.
-f1 <- todo_reshape(1)
+# Wide: one row per year, one column per gas. Pivot the gas columns into a
+# gas/value pair; Year becomes year. Every source cell is populated (no
+# suppression markers in this file), so the row count is exactly rows * gases.
+f1 <- f1_raw %>%
+  rename(year = Year) %>%
+  pivot_longer(-year, names_to = "gas", values_to = "value")
+assert_conservation(
+  f1_raw,
+  value_cols = setdiff(names(f1_raw), "Year"),
+  n_out      = nrow(f1),
+  what       = "global-ghg-emissions_fig-1.csv"
+)
 
 # The output name below is a placeholder. Rename it for what the figure
 # actually carries, the way river_flooding_magnitude.csv does.
@@ -83,17 +81,22 @@ f2_raw  <- read_epa_csv(f2_path)
 # columns into id_cols so the split between keys and series is explicit.
 assert_headers(
   f2_raw,
-  id_cols          = character(),
-  expected_headers = c("Year", "Energy", "International transport", "Agriculture", "Industrial processes", "Waste", "Land-use change and forestry"),
+  id_cols          = c("Year"),
+  expected_headers = c("Energy", "International transport", "Agriculture", "Industrial processes", "Waste", "Land-use change and forestry"),
   what             = "global-ghg-emissions_fig-2.csv"
 )
 
-# TODO reshape: 6 rows, Year + 6 series.
-# Source headers: Year | Energy | International transport | Agriculture | Industrial processes | Waste | Land-use change and forestry
-# Units line: million metric tons CO2e
-# Produce a tidy long-format data frame. Keep every value as character: the
-# source carries up to 10 significant digits and must survive byte for byte.
-f2 <- todo_reshape(2)
+# Wide: one row per year, one column per sector. Pivot the sector columns into
+# a sector/value pair; Year becomes year.
+f2 <- f2_raw %>%
+  rename(year = Year) %>%
+  pivot_longer(-year, names_to = "sector", values_to = "value")
+assert_conservation(
+  f2_raw,
+  value_cols = setdiff(names(f2_raw), "Year"),
+  n_out      = nrow(f2),
+  what       = "global-ghg-emissions_fig-2.csv"
+)
 
 # The output name below is a placeholder. Rename it for what the figure
 # actually carries, the way river_flooding_magnitude.csv does.
@@ -110,17 +113,23 @@ f3_raw  <- read_epa_csv(f3_path)
 # columns into id_cols so the split between keys and series is explicit.
 assert_headers(
   f3_raw,
-  id_cols          = character(),
-  expected_headers = c("Region", "East Asia and Pacific", "Europe and Central Asia", "United States", "South Asia", "Middle East and North Africa", "Latin America and Caribbean", "Sub-Saharan Africa", "Canada", "Other"),
+  id_cols          = c("Region"),
+  expected_headers = c("East Asia and Pacific", "Europe and Central Asia", "United States", "South Asia", "Middle East and North Africa", "Latin America and Caribbean", "Sub-Saharan Africa", "Canada", "Other"),
   what             = "global-ghg-emissions_fig-3.csv"
 )
 
-# TODO reshape: 32 rows, Region + 9 series.
-# Source headers: Region | East Asia and Pacific | Europe and Central Asia | United States | South Asia | Middle East and North Africa | Latin America and Caribbean | Sub-Saharan Africa | Canada | Other
-# Units line: million metric tons
-# Produce a tidy long-format data frame. Keep every value as character: the
-# source carries up to 10 significant digits and must survive byte for byte.
-f3 <- todo_reshape(3)
+# The source header for this column is literally "Region", but every value in
+# it is a year (1990-2021); the region names are the other 9 columns. Renamed
+# to year here so the output isn't mislabeled the way EPA's own CSV is.
+f3 <- f3_raw %>%
+  rename(year = Region) %>%
+  pivot_longer(-year, names_to = "region", values_to = "value")
+assert_conservation(
+  f3_raw,
+  value_cols = setdiff(names(f3_raw), "Region"),
+  n_out      = nrow(f3),
+  what       = "global-ghg-emissions_fig-3.csv"
+)
 
 # The output name below is a placeholder. Rename it for what the figure
 # actually carries, the way river_flooding_magnitude.csv does.
@@ -132,10 +141,23 @@ col <- function(name, type, description) {
   list(name = name, type = type, description = description)
 }
 
-# One entry per output column, in order, filled from the data frame itself so it
-# cannot drift. `type` and `description` are deliberately blank: tests/test-data.R
-# fails while either is empty, so every column has to be documented by hand.
-describe <- function(df) lapply(names(df), function(nm) col(nm, "", ""))
+COLUMN_DOCS <- list(
+  year = col("year", "integer", "Calendar year."),
+  gas = col("gas", "string",
+    "Greenhouse gas category, as EPA's chart legend: Carbon dioxide, Methane, Nitrous oxide, or HFCs, PFCs, and SF6."),
+  sector = col("sector", "string",
+    "Source sector, as EPA's chart legend: Energy, International transport, Agriculture, Industrial processes, Waste, or Land-use change and forestry."),
+  region = col("region", "string",
+    "World region or country, as EPA's chart legend: East Asia and Pacific, Europe and Central Asia, United States, South Asia, Middle East and North Africa, Latin America and Caribbean, Sub-Saharan Africa, Canada, or Other."),
+  value_gas = col("value", "number",
+    "Global emissions of the given gas, in million metric tons of CO2 equivalent (CO2e), verbatim from the source file."),
+  value_sector = col("value", "number",
+    "Global greenhouse gas emissions from the given sector, in million metric tons of CO2 equivalent (CO2e), verbatim from the source file."),
+  value_region = col("value", "number",
+    "Global carbon dioxide emissions for the given region, in million metric tons, verbatim from the source file.")
+)
+
+describe <- function(cols) lapply(cols, function(nm) COLUMN_DOCS[[nm]])
 
 meta <- list(
   indicator = INDICATOR,
@@ -151,7 +173,7 @@ meta <- list(
       web_update      = f1_meta$web_update,
       unit            = f1_meta$units,
       rows            = nrow(f1),
-      columns         = describe(f1)
+      columns         = describe(c("year", "gas", "value_gas"))
     ),
     list(
       file            = "global_greenhouse_gas_emissions_fig2.csv",
@@ -164,7 +186,7 @@ meta <- list(
       web_update      = f2_meta$web_update,
       unit            = f2_meta$units,
       rows            = nrow(f2),
-      columns         = describe(f2)
+      columns         = describe(c("year", "sector", "value_sector"))
     ),
     list(
       file            = "global_greenhouse_gas_emissions_fig3.csv",
@@ -177,7 +199,7 @@ meta <- list(
       web_update      = f3_meta$web_update,
       unit            = f3_meta$units,
       rows            = nrow(f3),
-      columns         = describe(f3)
+      columns         = describe(c("year", "region", "value_region"))
     )
   )
 )

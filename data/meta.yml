@@ -1,0 +1,75 @@
+indicator:
+  name: Global Greenhouse Gas Emissions
+  slug: global-greenhouse-gas-emissions
+  publisher: U.S. Environmental Protection Agency
+  source_page: https://19january2025snapshot.epa.gov/climate-indicators/climate-change-indicators-global-greenhouse-gas-emissions/index.html
+  technical_documentation: https://19january2025snapshot.epa.gov/system/files/documents/2024-12/global-ghg-emissions_td.pdf
+  rights: Public domain, work of the U.S. Government (17 U.S.C. 105)
+datasets:
+- file: global_greenhouse_gas_emissions_fig1.csv
+  figure: Figure 1
+  figure_title: Figure 1. Global Greenhouse Gas Emissions by Gas, 1990-2015
+  source_file: global-ghg-emissions_fig-1.csv
+  source_sha256: 400559187be8a175adb8e8df228b154ff1ea241d972dd25aa2cbfebab520089b
+  source_encoding: UTF-8
+  data_source: Climate Watch, 2024
+  web_update: December 2024
+  unit: million metric tons CO2e
+  rows: 24
+  columns:
+  - name: year
+    type: integer
+    description: Calendar year.
+  - name: gas
+    type: string
+    description: 'Greenhouse gas category, as EPA''s chart legend: Carbon dioxide,
+      Methane, Nitrous oxide, or HFCs, PFCs, and SF6.'
+  - name: value
+    type: number
+    description: Global emissions of the given gas, in million metric tons of CO2
+      equivalent (CO2e), verbatim from the source file.
+- file: global_greenhouse_gas_emissions_fig2.csv
+  figure: Figure 2
+  figure_title: Figure 2. Global Greenhouse Gas Emissions by Sector, 1990-2015
+  source_file: global-ghg-emissions_fig-2.csv
+  source_sha256: f35d8ecc94e9802bb0383ed775fe5313dfc11e2bbf329cab55a315bc6258c3c4
+  source_encoding: UTF-8
+  data_source: Climate Watch, 2024
+  web_update: December 2024
+  unit: million metric tons CO2e
+  rows: 36
+  columns:
+  - name: year
+    type: integer
+    description: Calendar year.
+  - name: sector
+    type: string
+    description: 'Source sector, as EPA''s chart legend: Energy, International transport,
+      Agriculture, Industrial processes, Waste, or Land-use change and forestry.'
+  - name: value
+    type: number
+    description: Global greenhouse gas emissions from the given sector, in million
+      metric tons of CO2 equivalent (CO2e), verbatim from the source file.
+- file: global_greenhouse_gas_emissions_fig3.csv
+  figure: Figure 3
+  figure_title: Figure 3. Global Carbon Dioxide Emissions by Region, 1990-2021
+  source_file: global-ghg-emissions_fig-3.csv
+  source_sha256: 84752f6f5b63708554793a3ec63e26f94252b705ba2176fe45595338701cee59
+  source_encoding: UTF-8
+  data_source: Climate Watch, 2024
+  web_update: December 2024
+  unit: million metric tons
+  rows: 288
+  columns:
+  - name: year
+    type: integer
+    description: Calendar year.
+  - name: region
+    type: string
+    description: 'World region or country, as EPA''s chart legend: East Asia and Pacific,
+      Europe and Central Asia, United States, South Asia, Middle East and North Africa,
+      Latin America and Caribbean, Sub-Saharan Africa, Canada, or Other.'
+  - name: value
+    type: number
+    description: Global carbon dioxide emissions for the given region, in million
+      metric tons, verbatim from the source file.

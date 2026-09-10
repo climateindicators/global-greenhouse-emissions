@@ -1,0 +1,25 @@
+year,gas,value
+1990,Carbon dioxide,23060.38
+1990,Methane,7002.92
+1990,Nitrous oxide,2369.51
+1990,"HFCs, PFCs, and SF6",302.21
+1995,Carbon dioxide,24086.41
+1995,Methane,7095.62
+1995,Nitrous oxide,2470.91
+1995,"HFCs, PFCs, and SF6",329.36
+2000,Carbon dioxide,25923.86
+2000,Methane,7171.95
+2000,Nitrous oxide,2472.06
+2000,"HFCs, PFCs, and SF6",443.72
+2005,Carbon dioxide,29908.23
+2005,Methane,7637.59
+2005,Nitrous oxide,2702.93
+2005,"HFCs, PFCs, and SF6",541.91
+2010,Carbon dioxide,33521.99
+2010,Methane,7930.31
+2010,Nitrous oxide,2855.38
+2010,"HFCs, PFCs, and SF6",762.28
+2015,Carbon dioxide,34686.31
+2015,Methane,8314.76
+2015,Nitrous oxide,2991.77
+2015,"HFCs, PFCs, and SF6",1000.64
