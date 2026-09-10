@@ -57,12 +57,42 @@ for (f in list.files("data", pattern = "[.](csv|yml)$", full.names = TRUE)) {
 }
 
 cat("\nValue snapshots\n")
-# TODO value snapshots: pin the actual numbers for each output file, so a
-# legitimate data update fails here and says exactly what changed. For each
-# dataset check at least: row count, the first and last row in source order,
-# and the minimum and maximum of each value column. Compare as strings where
-# the source precision matters. See the source CSV in data-raw/ for the values.
-check("value snapshots have been written", FALSE)
+
+# Compared as strings, not as.numeric(), so a change in trailing precision
+# (e.g. EPA re-publishing 920.42 as 920.420) fails here instead of silently
+# rounding away.
+snapshot_row <- function(df, i, expected, what) {
+  actual <- as.character(unlist(df[i, ], use.names = FALSE))
+  check(sprintf("%s: row %d is %s", what, i, paste(expected, collapse = "|")),
+        identical(actual, expected))
+}
+snapshot_extreme <- function(df, which_fn, expected_value, what, label) {
+  v <- as.numeric(df$value)
+  i <- which_fn(v)
+  check(sprintf("%s: %s value is %s (row %d)", what, label, expected_value, i),
+        identical(df$value[i], expected_value))
+}
+
+f1 <- rd("global_greenhouse_gas_emissions_fig1.csv")
+check("fig1: 24 rows", nrow(f1) == 24L)
+snapshot_row(f1, 1, c("1990", "Carbon dioxide", "23060.38"), "fig1")
+snapshot_row(f1, 24, c("2015", "HFCs, PFCs, and SF6", "1000.64"), "fig1")
+snapshot_extreme(f1, which.min, "302.21", "fig1", "min")
+snapshot_extreme(f1, which.max, "34686.31", "fig1", "max")
+
+f2 <- rd("global_greenhouse_gas_emissions_fig2.csv")
+check("fig2: 36 rows", nrow(f2) == 36L)
+snapshot_row(f2, 1, c("1990", "Energy", "22726.95"), "fig2")
+snapshot_row(f2, 36, c("2015", "Land-use change and forestry", "920.42"), "fig2")
+snapshot_extreme(f2, which.min, "637.9", "fig2", "min")
+snapshot_extreme(f2, which.max, "34962.5", "fig2", "max")
+
+f3 <- rd("global_greenhouse_gas_emissions_fig3.csv")
+check("fig3: 288 rows", nrow(f3) == 288L)
+snapshot_row(f3, 1, c("1990", "East Asia and Pacific", "4426.4"), "fig3")
+snapshot_row(f3, 288, c("2021", "Other", "407.19"), "fig3")
+snapshot_extreme(f3, which.min, "246.12", "fig3", "min")
+snapshot_extreme(f3, which.max, "15603.66", "fig3", "max")
 
 cat("\n")
 if (length(failures)) {
